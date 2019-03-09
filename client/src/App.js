@@ -3,6 +3,7 @@ import axios from "axios";
 import "./App.css";
 import SubmitButton from "./Components/SubmitButton";
 import OutletInformation from "./Components/OutletInformation";
+import appConfig from "./config/app.config";
 
 class App extends Component {
   constructor(props) {
@@ -34,11 +35,10 @@ class App extends Component {
     this.setLoading(true);
 
     axios
-      .post("http://localhost:5000/outlet", {
+      .post(`${appConfig.baseURL}/outlet`, {
         addressDetails: this.state.address
       })
       .then(function(response) {
-        console.log(response);
         self.setState({
           resultOutlet: response.data.responseData
         });

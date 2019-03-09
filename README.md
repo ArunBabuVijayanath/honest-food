@@ -1,4 +1,4 @@
-# honest-food
+# Honest Food App
 
 Code test for honest food
 
@@ -8,7 +8,7 @@ Code test for honest food
 Clone this repo
 ```
 
-## api
+## To set up API in local
 
 ```
 $ cd api
@@ -17,12 +17,11 @@ $ node server
 visit http:localhost:5000/
 ```
 
-## client
+## To set up Client in local
 
 ```
 $ cd client
 $ npm install
 $ npm start
 visit http:localhost:3000/
-``
 ```
