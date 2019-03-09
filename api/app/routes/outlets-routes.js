@@ -1,4 +1,4 @@
 module.exports = app => {
-  const outlets = require("../controllers/outlet.controller.js");
+  const outlets = require("../controllers/outlets.controller.js");
   app.post("/outlet", outlets.findOne);
 };

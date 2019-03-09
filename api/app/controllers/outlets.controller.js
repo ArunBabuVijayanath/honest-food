@@ -1,4 +1,3 @@
-const AddressModel = require("../models/address.model.js");
 const fs = require("fs");
 const path = require("path");
 const xmlReader = require("read-xml");
@@ -35,18 +34,6 @@ function getLatAndLong(address) {
   return geocoder.geocode(address);
 }
 
-exports.findAll = (req, res) => {
-  AddressModel.find()
-    .then(AddressModelData => {
-      res.send(AddressModelData);
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || "Some error occurred while retrieving notes."
-      });
-    });
-};
-
 exports.findOne = (req, res) => {
   const addressDetails = req.body.addressDetails || "";
 
@@ -60,10 +47,9 @@ exports.findOne = (req, res) => {
           locationDetails.latitude
         ];
 
-        console.log("Requesting the coordinates: ", coordinates);
         xmlReader.readXML(fs.readFileSync(FILE), function(err, data) {
           if (err) {
-            console.error(err);
+            res.status(500).send("Error reading KML file!");
           }
 
           var xml = data.content;
@@ -73,7 +59,7 @@ exports.findOne = (req, res) => {
 
           const listOfPlaceMark = result.kml.Document.Placemark || [];
           let polygonData = [];
-          let responseData = "No data found for given location";
+          let responseData = "No data found for the given location";
 
           for (let i = 0; i < listOfPlaceMark.length; i++) {
             let currentPolyData = listOfPlaceMark[i];
@@ -92,19 +78,16 @@ exports.findOne = (req, res) => {
 
             if (inside(coordinates, polygonData)) {
               responseData = currentPolyData.name._text;
-              res.send({
-                responseData
-              });
             }
           }
 
-          res.send({
+          res.status(200).send({
             responseData
           });
         });
       })
       .catch(function(err) {
-        console.log(err);
+        res.status(500).send("Something went wrong!");
       });
   } else {
     res.status(400).send("Addresse is required");

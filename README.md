@@ -14,7 +14,7 @@ Clone this repo
 $ cd api
 $ npm install
 $ node server
-visit http:localhost:5000/
+API will start running @ http:localhost:5000/
 ```
 
 ## To set up Client in local
