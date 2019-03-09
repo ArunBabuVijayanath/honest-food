@@ -8,6 +8,7 @@ const FILE = path.join(
   "../../config/FullStackTest_DeliveryAreas.kml"
 );
 const inside = require("point-in-polygon");
+var NodeGeocoder = require("node-geocoder");
 
 function getCordinatesList(dataString) {
   let polygonData = [];
@@ -25,6 +26,15 @@ function getCordinatesList(dataString) {
   return polygonData;
 }
 
+function getLatAndLong(address) {
+  var options = {
+    provider: "google",
+    apiKey: "AIzaSyAYuSWsNt4lN-0bb27zwcbaNybjzGjP_rc"
+  };
+  let geocoder = NodeGeocoder(options);
+  return geocoder.geocode(address);
+}
+
 exports.findAll = (req, res) => {
   AddressModel.find()
     .then(AddressModelData => {
@@ -38,47 +48,65 @@ exports.findAll = (req, res) => {
 };
 
 exports.findOne = (req, res) => {
-  const dummyInput = [1.5, 1.5];
-  xmlReader.readXML(fs.readFileSync(FILE), function(err, data) {
-    if (err) {
-      console.error(err);
-    }
+  const addressDetails = req.body.addressDetails || "";
 
-    var xml = data.content;
-    var result = JSON.parse(
-      convert.xml2json(xml, { compact: true, spaces: 4 })
-    );
+  if (addressDetails.length) {
+    getLatAndLong(addressDetails)
+      .then(function(resData) {
+        const locationDetails = resData[0];
 
-    const listOfPlaceMark = result.kml.Document.Placemark || [];
-    let polygonData = [];
-    let responseData = "No data found for given location";
+        const coordinates = [
+          locationDetails.longitude,
+          locationDetails.latitude
+        ];
 
-    for (let i = 0; i < listOfPlaceMark.length; i++) {
-      let currentPolyData = listOfPlaceMark[i];
+        console.log("Requesting the coordinates: ", coordinates);
+        xmlReader.readXML(fs.readFileSync(FILE), function(err, data) {
+          if (err) {
+            console.error(err);
+          }
 
-      if ("Point" in currentPolyData) {
-        polygonData = getCordinatesList(
-          currentPolyData.Point.coordinates._text.split("\n")
-        );
-      } else if ("Polygon" in currentPolyData) {
-        polygonData = getCordinatesList(
-          currentPolyData.Polygon.outerBoundaryIs.LinearRing.coordinates._text.split(
-            "\n "
-          )
-        );
-      }
+          var xml = data.content;
+          var result = JSON.parse(
+            convert.xml2json(xml, { compact: true, spaces: 4 })
+          );
 
-      if (inside(dummyInput, polygonData)) {
-        responseData = currentPolyData.name._text;
-        res.send({
-          responseData
+          const listOfPlaceMark = result.kml.Document.Placemark || [];
+          let polygonData = [];
+          let responseData = "No data found for given location";
+
+          for (let i = 0; i < listOfPlaceMark.length; i++) {
+            let currentPolyData = listOfPlaceMark[i];
+
+            if ("Point" in currentPolyData) {
+              polygonData = getCordinatesList(
+                currentPolyData.Point.coordinates._text.split("\n")
+              );
+            } else if ("Polygon" in currentPolyData) {
+              polygonData = getCordinatesList(
+                currentPolyData.Polygon.outerBoundaryIs.LinearRing.coordinates._text.split(
+                  "\n "
+                )
+              );
+            }
+
+            if (inside(coordinates, polygonData)) {
+              responseData = currentPolyData.name._text;
+              res.send({
+                responseData
+              });
+            }
+          }
+
+          res.send({
+            responseData
+          });
         });
-      }
-      console.log(polygonData);
-    }
-
-    res.send({
-      responseData
-    });
-  });
+      })
+      .catch(function(err) {
+        console.log(err);
+      });
+  } else {
+    res.status(400).send("Addresse is required");
+  }
 };
